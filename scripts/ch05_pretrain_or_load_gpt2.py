@@ -25,7 +25,7 @@ from gpt2_from_scratch.training import train_language_model
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--prompt", default="Every effort moves you")
-    parser.add_argument("--text-file", default="the-verdict.txt")
+    parser.add_argument("--text-file", default=str(ROOT / "data" / "the-verdict.txt"))
     parser.add_argument("--train", action="store_true")
     parser.add_argument("--pretrained", action="store_true")
     parser.add_argument("--model-name", default="gpt2-small (124M)")

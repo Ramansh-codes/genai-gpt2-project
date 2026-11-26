@@ -61,7 +61,10 @@ def main() -> None:
         choices=["preview", "train", "generate", "generate-responses", "evaluate"],
         default="preview",
     )
-    parser.add_argument("--data-file", default="instruction-data.json")
+    parser.add_argument(
+        "--data-file",
+        default=str(ROOT / "data" / "instruction-data.json"),
+    )
     parser.add_argument("--model-name", default="gpt2-small (124M)")
     parser.add_argument("--checkpoint", default="gpt2-small124M-sft.pth")
     parser.add_argument("--responses-file", default="instruction-data-with-response.json")
@@ -99,7 +102,10 @@ def main() -> None:
             args.ollama_model,
         )
         print(f"Number of scores: {len(scores)} of {len(scored_data)}")
-        print(f"Average score: {sum(scores) / len(scores):.2f}")
+        if scores:
+            print(f"Average score: {sum(scores) / len(scores):.2f}")
+        else:
+            print("Average score: N/A (no valid integer scores returned)")
         return
 
     tokenizer = tiktoken.get_encoding("gpt2")

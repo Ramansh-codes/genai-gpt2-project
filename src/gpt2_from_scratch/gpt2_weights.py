@@ -15,8 +15,15 @@ from torch import nn
 def download_and_load_gpt2(model_size: str, models_dir: str | Path):
     """Download GPT-2 TensorFlow checkpoint files and return settings/params."""
     import requests
-    import tensorflow as tf
     from tqdm import tqdm
+
+    try:
+        import tensorflow as tf
+    except ImportError as exc:
+        raise ImportError(
+            "tensorflow is required to load OpenAI GPT-2 TensorFlow checkpoints. "
+            "Install it with `pip install tensorflow`."
+        ) from exc
 
     allowed_sizes = ("124M", "355M", "774M", "1558M")
     if model_size not in allowed_sizes:
@@ -79,8 +86,17 @@ def _download_file(url, destination: Path, backup_url, requests, tqdm) -> None:
     except requests.exceptions.RequestException:
         if backup_url is not None:
             print(f"Primary URL failed. Trying backup URL: {backup_url}")
-            if attempt(backup_url):
-                return
+            try:
+                if attempt(backup_url):
+                    return
+            except requests.exceptions.RequestException:
+                if destination.exists() and destination.stat().st_size > 0:
+                    print(f"Offline fallback: using existing local file {destination}")
+                    return
+                raise
+        if destination.exists() and destination.stat().st_size > 0:
+            print(f"Offline fallback: using existing local file {destination}")
+            return
         raise
 
 

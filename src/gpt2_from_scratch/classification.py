@@ -181,6 +181,8 @@ def calc_accuracy_loader(data_loader, model, device, num_batches=None) -> float:
         num_examples += predicted_labels.shape[0]
         correct_predictions += (predicted_labels == target_batch).sum().item()
 
+    if num_examples == 0:
+        return float("nan")
     return correct_predictions / num_examples
 
 

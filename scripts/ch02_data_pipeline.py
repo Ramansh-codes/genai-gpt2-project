@@ -16,7 +16,7 @@ from gpt2_from_scratch.data import create_dataloader_v1, read_text
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--text-file", default="the-verdict.txt")
+    parser.add_argument("--text-file", default=str(ROOT / "data" / "the-verdict.txt"))
     parser.add_argument("--batch-size", type=int, default=4)
     parser.add_argument("--max-length", type=int, default=8)
     parser.add_argument("--stride", type=int, default=8)

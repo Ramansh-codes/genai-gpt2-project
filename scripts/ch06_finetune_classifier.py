@@ -63,7 +63,7 @@ def build_classifier_model(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=["prepare", "train", "infer"], default="prepare")
-    parser.add_argument("--data-dir", default="data")
+    parser.add_argument("--data-dir", default=str(ROOT / "data"))
     parser.add_argument("--model-name", default="gpt2-small (124M)")
     parser.add_argument("--checkpoint", default="review_classifier.pth")
     parser.add_argument("--epochs", type=int, default=5)

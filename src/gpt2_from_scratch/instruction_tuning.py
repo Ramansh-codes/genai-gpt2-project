@@ -16,7 +16,7 @@ INSTRUCTION_DATA_URL = (
 
 
 def download_and_load_instruction_data(
-    file_path: str | Path = "instruction-data.json",
+    file_path: str | Path = "data/instruction-data.json",
     url: str = INSTRUCTION_DATA_URL,
 ) -> list[dict]:
     file_path = Path(file_path)
