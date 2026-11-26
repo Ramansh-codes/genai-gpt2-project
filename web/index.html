@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GPT-2 From Scratch — Interactive Studio</title>
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --surface: #131a27;
+      --surface-2: #1b2435;
+      --border: #28344b;
+      --text: #eef2f9;
+      --muted: #93a1bc;
+      --accent: #4f8cff;
+      --accent-hover: #3b7bff;
+      --accent-soft: rgba(79, 140, 255, 0.14);
+      --green: #32d583;
+      --green-soft: rgba(50, 213, 131, 0.14);
+      --amber: #f7b955;
+      --red: #f97066;
+      --red-soft: rgba(249, 112, 102, 0.14);
+      --radius: 14px;
+      --mono: "Cascadia Code", "Fira Code", Consolas, monospace;
+      --sans: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      background: radial-gradient(circle at top right, #162238 0%, var(--bg) 55%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 28px 20px 56px;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1.55rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid transparent;
+      padding: 9px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.92rem;
+      font-weight: 600;
+      transition: 0.15s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+      background: var(--surface);
+    }
+
+    .tab-btn.active {
+      color: var(--text);
+      background: var(--accent-soft);
+      border-color: rgba(79, 140, 255, 0.35);
+    }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.45fr 1fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 860px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    .card h2 {
+      margin: 0 0 14px;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    textarea, select, input[type="text"] {
+      width: 100%;
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      font-family: var(--sans);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    textarea:focus, select:focus, input[type="text"]:focus {
+      border-color: var(--accent);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+      line-height: 1.5;
+    }
+
+    .presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 10px 0 14px;
+    }
+
+    .chip {
+      background: var(--surface-2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 5px 11px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    .chip:hover {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+
+    .control-group {
+      margin-bottom: 16px;
+    }
+
+    .range-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .range-val {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .primary-btn {
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: 0.96rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+
+    .primary-btn:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+
+    .primary-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .output-box {
+      margin-top: 16px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      min-height: 120px;
+      white-space: pre-wrap;
+      line-height: 1.6;
+      font-size: 0.96rem;
+    }
+
+    .prompt-part {
+      color: var(--muted);
+    }
+
+    .gen-part {
+      color: var(--text);
+      background: rgba(79, 140, 255, 0.12);
+      border-radius: 4px;
+      padding: 1px 2px;
+    }
+
+    .meta-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 10px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+
+    .notice {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      background: rgba(247, 185, 85, 0.12);
+      border: 1px solid rgba(247, 185, 85, 0.3);
+      color: var(--amber);
+      display: none;
+    }
+
+    .notice.error {
+      background: var(--red-soft);
+      border-color: rgba(249, 112, 102, 0.35);
+      color: var(--red);
+    }
+
+    .token-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 14px;
+    }
+
+    .token-pill {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 5px 8px;
+      font-family: var(--mono);
+    }
+
+    .token-text {
+      font-size: 0.86rem;
+      color: var(--text);
+      white-space: pre;
+    }
+
+    .token-id {
+      font-size: 0.72rem;
+      color: var(--accent);
+      margin-top: 2px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .badge.ham { background: var(--green-soft); color: var(--green); }
+    .badge.spam { background: var(--red-soft); color: var(--red); }
+
+    .arch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .stat-box {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .stat-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-family: var(--mono);
+      font-size: 1.02rem;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <h1>GPT-2 From Scratch</h1>
+        <p>Interactive Evaluation Studio — Generation, Tokenizer &amp; Classification</p>
+      </div>
+      <div class="status-pill" id="statusPill">
+        <span class="dot"></span>
+        <span id="statusText">Connecting...</span>
+      </div>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="generate">Text Generation</button>
+      <button class="tab-btn" data-tab="tokenize">Tokenizer &amp; Architecture</button>
+      <button class="tab-btn" data-tab="classify">SMS Spam Classifier</button>
+    </div>
+
+    <!-- Tab 1: Text Generation -->
+    <section id="tab-generate" class="panel active">
+      <div class="grid">
+        <div class="card">
+          <h2>Prompt &amp; Output</h2>
+          <label for="promptInput">Input Prompt</label>
+          <textarea id="promptInput" placeholder="Enter any text prompt or question...">Every effort moves you</textarea>
+
+          <div class="presets">
+            <button class="chip" data-prompt="Every effort moves you">Every effort moves you</button>
+            <button class="chip" data-prompt="Question: What is artificial intelligence?&#10;Answer:">Q&amp;A: What is AI?</button>
+            <button class="chip" data-prompt="In a distant future, scientists discovered">Story starter</button>
+            <button class="chip" data-prompt="Below is an instruction that describes a task. Write a response that appropriately completes the request.&#10;&#10;### Instruction:&#10;Give three tips for staying focused while studying.&#10;&#10;### Response:&#10;">Instruction format</button>
+          </div>
+
+          <button class="primary-btn" id="generateBtn">Generate Text</button>
+
+          <div class="notice" id="genNotice"></div>
+
+          <div class="output-box" id="genOutput">
+            <span class="prompt-part">Output will appear here. First run with GPT-2 124M loads weights (~15–20s), then subsequent generations are fast.</span>
+          </div>
+          <div class="meta-bar" id="genMeta"></div>
+        </div>
+
+        <div class="card">
+          <h2>Model &amp; Sampling</h2>
+
+          <div class="control-group">
+            <label for="modelSelect">Model Checkpoint</label>
+            <select id="modelSelect"></select>
+            <div id="modelNote" style="font-size:0.8rem; color:var(--muted); margin-top:6px;"></div>
+          </div>
+
+          <div class="control-group">
+            <div class="range-row">
+              <label for="maxTokensRange" style="margin:0;">Max New Tokens</label>
+              <span class="range-val" id="maxTokensVal">40</span>
+            </div>
+            <input type="range" id="maxTokensRange" min="5" max="150" step="5" value="40" />
+          </div>
+
+          <div class="control-group">
+            <div class="range-row">
+              <label for="tempRange" style="margin:0;">Temperature (0 = greedy)</label>
+              <span class="range-val" id="tempVal">0.7</span>
+            </div>
+            <input type="range" id="tempRange" min="0" max="1.5" step="0.1" value="0.7" />
+          </div>
+
+          <div class="control-group">
+            <div class="range-row">
+              <label for="topKRange" style="margin:0;">Top-K (0 = off)</label>
+              <span class="range-val" id="topKVal">50</span>
+            </div>
+            <input type="range" id="topKRange" min="0" max="100" step="5" value="50" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 2: Tokenizer & Architecture -->
+    <section id="tab-tokenize" class="panel">
+      <div class="card" style="margin-bottom: 18px;">
+        <h2>Live GPT-2 BPE Tokenizer (Chapter 2)</h2>
+        <label for="tokInput">Type text to inspect token IDs</label>
+        <input type="text" id="tokInput" value="Every effort moves you forward." />
+        <div class="meta-bar" id="tokMeta"></div>
+        <div class="token-list" id="tokenList"></div>
+      </div>
+
+      <div class="card">
+        <h2>Model Architecture Comparison (Chapter 4)</h2>
+        <div class="arch-grid" id="archGrid"></div>
+      </div>
+    </section>
+
+    <!-- Tab 3: SMS Spam Classifier -->
+    <section id="tab-classify" class="panel">
+      <div class="card">
+        <h2>SMS Spam Classifier (Chapter 6)</h2>
+        <label for="smsInput">SMS Message</label>
+        <textarea id="smsInput" style="min-height:95px;">You are a winner selected to receive cash. Reply WIN now!</textarea>
+
+        <div class="presets">
+          <button class="chip sms-chip" data-sms="You are a winner selected to receive cash. Reply WIN now!">Spam example</button>
+          <button class="chip sms-chip" data-sms="Hey, are we still meeting at the library at 5pm?">Normal example</button>
+        </div>
+
+        <button class="primary-btn" id="classifyBtn" style="max-width:240px;">Classify Message</button>
+        <div class="notice" id="clsNotice"></div>
+        <div id="clsResult" style="margin-top:16px;"></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const statusText = document.getElementById("statusText");
+    const modelSelect = document.getElementById("modelSelect");
+    const modelNote = document.getElementById("modelNote");
+    const promptInput = document.getElementById("promptInput");
+    const generateBtn = document.getElementById("generateBtn");
+    const genOutput = document.getElementById("genOutput");
+    const genMeta = document.getElementById("genMeta");
+    const genNotice = document.getElementById("genNotice");
+
+    const maxTokensRange = document.getElementById("maxTokensRange");
+    const tempRange = document.getElementById("tempRange");
+    const topKRange = document.getElementById("topKRange");
+    const maxTokensVal = document.getElementById("maxTokensVal");
+    const tempVal = document.getElementById("tempVal");
+    const topKVal = document.getElementById("topKVal");
+
+    const tokInput = document.getElementById("tokInput");
+    const tokMeta = document.getElementById("tokMeta");
+    const tokenList = document.getElementById("tokenList");
+    const archGrid = document.getElementById("archGrid");
+
+    const smsInput = document.getElementById("smsInput");
+    const classifyBtn = document.getElementById("classifyBtn");
+    const clsNotice = document.getElementById("clsNotice");
+    const clsResult = document.getElementById("clsResult");
+
+    let statusData = null;
+
+    // Tab switching
+    document.querySelectorAll(".tab-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(`tab-${btn.dataset.tab}`).classList.add("active");
+      });
+    });
+
+    // Presets
+    document.querySelectorAll(".chip[data-prompt]").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        promptInput.value = chip.dataset.prompt;
+      });
+    });
+    document.querySelectorAll(".sms-chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        smsInput.value = chip.dataset.sms;
+      });
+    });
+
+    // Sliders
+    maxTokensRange.addEventListener("input", () => (maxTokensVal.textContent = maxTokensRange.value));
+    tempRange.addEventListener("input", () => (tempVal.textContent = tempRange.value));
+    topKRange.addEventListener("input", () => (topKVal.textContent = topKRange.value));
+
+    function showNotice(el, msg, isError = false) {
+      el.textContent = msg;
+      el.classList.toggle("error", isError);
+      el.style.display = msg ? "block" : "none";
+    }
+
+    function updateModelNote() {
+      if (!statusData) return;
+      const selected = statusData.models.find((m) => m.id === modelSelect.value);
+      modelNote.textContent = selected ? `${selected.params.toLocaleString()} params · ${selected.note}` : "";
+    }
+
+    modelSelect.addEventListener("change", updateModelNote);
+
+    async function loadStatus() {
+      const res = await fetch("/api/status");
+      statusData = await res.json();
+      statusText.textContent = `Device: ${statusData.device.toUpperCase()} · Ready`;
+
+      modelSelect.innerHTML = "";
+      statusData.models.forEach((m) => {
+        const opt = document.createElement("option");
+        opt.value = m.id;
+        opt.textContent = m.available ? m.label : `${m.label} (not trained)`;
+        if (!m.available) opt.disabled = true;
+        modelSelect.appendChild(opt);
+      });
+      updateModelNote();
+
+      const tiny = statusData.configs.tiny;
+      const full = statusData.configs["124m"];
+      archGrid.innerHTML = `
+        <div class="stat-box"><div class="stat-label">GPT-2 124M Layers / Heads</div><div class="stat-value">${full.n_layers} layers · ${full.n_heads} heads</div></div>
+        <div class="stat-box"><div class="stat-label">GPT-2 124M Embedding / Context</div><div class="stat-value">${full.emb_dim} dim · ${full.context_length} ctx</div></div>
+        <div class="stat-box"><div class="stat-label">Tiny GPT Layers / Heads</div><div class="stat-value">${tiny.n_layers} layers · ${tiny.n_heads} heads</div></div>
+        <div class="stat-box"><div class="stat-label">Tiny GPT Embedding / Context</div><div class="stat-value">${tiny.emb_dim} dim · ${tiny.context_length} ctx</div></div>
+      `;
+
+      if (!statusData.classifier_available) {
+        showNotice(clsNotice, "Classifier checkpoint (review_classifier.pth) is not trained yet. Run: python scripts\\ch06_finetune_classifier.py --mode train");
+      }
+    }
+
+    generateBtn.addEventListener("click", async () => {
+      showNotice(genNotice, "");
+      generateBtn.disabled = true;
+      generateBtn.textContent = "Generating...";
+      try {
+        const res = await fetch("/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt: promptInput.value,
+            model: modelSelect.value,
+            max_new_tokens: Number(maxTokensRange.value),
+            temperature: Number(tempRange.value),
+            top_k: Number(topKRange.value),
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showNotice(genNotice, data.error || "Generation failed.", true);
+          return;
+        }
+        genOutput.innerHTML = "";
+        const promptSpan = document.createElement("span");
+        promptSpan.className = "prompt-part";
+        promptSpan.textContent = data.prompt;
+
+        const genSpan = document.createElement("span");
+        genSpan.className = "gen-part";
+        genSpan.textContent = data.generated_text;
+
+        genOutput.appendChild(promptSpan);
+        genOutput.appendChild(genSpan);
+        genMeta.textContent = `Prompt tokens: ${data.prompt_tokens}  |  Generated tokens: ${data.tokens_generated}  |  Time: ${data.elapsed_ms} ms  |  Params: ${data.params.toLocaleString()}`;
+        loadStatus();
+      } catch (err) {
+        showNotice(genNotice, String(err), true);
+      } finally {
+        generateBtn.disabled = false;
+        generateBtn.textContent = "Generate Text";
+      }
+    });
+
+    let tokTimer = null;
+    async function runTokenize() {
+      const res = await fetch("/api/tokenize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: tokInput.value }),
+      });
+      const data = await res.json();
+      tokMeta.textContent = `Characters: ${data.char_count}  |  Tokens: ${data.count}`;
+      tokenList.innerHTML = "";
+      data.tokens.forEach((tok) => {
+        const pill = document.createElement("div");
+        pill.className = "token-pill";
+        const t = document.createElement("span");
+        t.className = "token-text";
+        t.textContent = tok.text.replace(/\n/g, "\\n");
+        const id = document.createElement("span");
+        id.className = "token-id";
+        id.textContent = tok.id;
+        pill.appendChild(t);
+        pill.appendChild(id);
+        tokenList.appendChild(pill);
+      });
+    }
+
+    tokInput.addEventListener("input", () => {
+      clearTimeout(tokTimer);
+      tokTimer = setTimeout(runTokenize, 120);
+    });
+
+    classifyBtn.addEventListener("click", async () => {
+      showNotice(clsNotice, "");
+      classifyBtn.disabled = true;
+      classifyBtn.textContent = "Classifying...";
+      try {
+        const res = await fetch("/api/classify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: smsInput.value }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showNotice(clsNotice, data.error || "Classification failed.", true);
+          clsResult.innerHTML = "";
+          return;
+        }
+        const cls = data.label === "spam" ? "spam" : "ham";
+        clsResult.innerHTML = `<span class="badge ${cls}">${data.label}</span> <span style="margin-left:10px; color:var(--muted); font-family:var(--mono); font-size:0.85rem;">${data.elapsed_ms} ms</span>`;
+      } catch (err) {
+        showNotice(clsNotice, String(err), true);
+      } finally {
+        classifyBtn.disabled = false;
+        classifyBtn.textContent = "Classify Message";
+      }
+    });
+
+    loadStatus();
+    runTokenize();
+  </script>
+</body>
+</html>
+

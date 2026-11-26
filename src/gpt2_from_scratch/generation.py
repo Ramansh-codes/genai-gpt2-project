@@ -47,7 +47,8 @@ def generate(
         logits = logits[:, -1, :]
 
         if top_k is not None:
-            top_logits, _ = torch.topk(logits, top_k)
+            k = min(top_k, logits.size(-1))
+            top_logits, _ = torch.topk(logits, k)
             min_values = top_logits[:, [-1]]
             logits = torch.where(
                 logits < min_values,

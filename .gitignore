@@ -11,6 +11,7 @@ env/
 *.pt
 *.ckpt
 *.safetensors
+gpt2/124M/model.ckpt.data-00000-of-00001
 
 # Local OS files
 .DS_Store
